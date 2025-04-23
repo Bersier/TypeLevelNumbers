@@ -1,9 +1,30 @@
 package typelevelnumbers
 
+import scala.annotation.tailrec
+
 /**
  * Sequence of [[Trit]]s
  */
-sealed trait Trits
+sealed trait Trits derives CanEqual:
+  def toBigInt: BigInt =
+    @tailrec def toBigInt(trits: Trits, acc: BigInt): BigInt = trits match
+      case Trits.Empty => acc
+      case Trits.NonEmpty(first, rest) =>
+        toBigInt(rest, acc * 3 + first.toInt)
+    toBigInt(this, BigInt(0))
+
+  override def toString: String =
+    val builder = new StringBuilder("")
+    @tailrec def toString(trits: Trits): String = trits match
+      case Trits.Empty => builder.toString
+      case Trits.NonEmpty(first, rest) =>
+        val digit = first match
+          case Trit.N => '-'
+          case Trit.Z => '0'
+          case Trit.P => '+'
+        builder.append(digit)
+        toString(rest)
+    toString(this)
 object Trits:
   /**
    * Sequence of [[Trit]]s that starts with [[SignBit]],
@@ -24,19 +45,23 @@ object Trits:
   type Empty = Empty.type
   case object Empty extends OfNumber
 
-  sealed trait NonEmpty[First <: Trit, Rest <: Trits] extends Trits:
+  sealed trait NonEmpty[+First <: Trit, Rest <: Trits] extends Trits:
     def first: First
     def rest: Rest
+
   object NonEmpty:
-    def apply[First <: Trit, Rest <: Trits]
-    (first: First, rest: Rest): NonEmpty[First, Rest] =
-      GenericNonEmpty(first, rest)
-    def unapply[First <: Trit, Rest <: Trits]
-    (trits: NonEmpty[First, Rest]): (First, Rest) = trits match
-      case GenericNonEmpty(first, rest) => (first, rest)
+    def apply[First <: Trit, Rest <: Trits](first: First, rest: Rest): NonEmpty[First, Rest] =
+      first match
+        case first: SignBit => WithSignBit(first, rest)
+        case _: Trit.Z => WithZ(rest).asInstanceOf[NonEmpty[First, Rest]]
+
+    def unapply[First <: Trit, Rest <: Trits](trits: NonEmpty[First, Rest]): (First, Rest) = trits match
+      case WithZ(rest) => (Trit.Z, rest)
       case WithSignBit(first, rest) => (first, rest)
-    private case class GenericNonEmpty[First <: Trit, Rest <: Trits]
-    (first: First, rest: Rest) extends NonEmpty[First, Rest]
+
+    private final case class WithZ[Rest <: Trits](rest: Rest) extends NonEmpty[Trit.Z, Rest]:
+      def first: Trit.Z = Trit.Z
+    end WithZ
   end NonEmpty
 
   /**
@@ -65,4 +90,16 @@ object Trits:
     case trits: NonEmpty[?, ?] => trits match
       case NonEmpty(first, rest) =>
         NonEmpty(Trit.negated(first), negated(rest))
+
+  def fromBigInt(n: BigInt): Trits.OfNumber =
+    if n == 0 then Trits.Empty else
+      @tailrec def fromBigInt(n: BigInt, acc: Trits): Trits.OfNumber =
+        val remainder = (n + 1).mod(3) - 1
+        val quotient = (n - remainder) / 3
+        if quotient == 0 then
+          SignBit.sign(remainder) match
+            case Some(sign) => Trits.WithSignBit(sign, acc)
+            case None => throw AssertionError(s"Quotient and remainder cannot both be 0 for non-zero $n.")
+        else fromBigInt(quotient, Trits.NonEmpty(Trit.sign(remainder), acc))
+      fromBigInt(n, Trits.Empty)
 end Trits
