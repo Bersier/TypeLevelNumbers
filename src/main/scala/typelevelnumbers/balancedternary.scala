@@ -1,0 +1,5 @@
+package typelevelnumbers
+
+class balancedternary {
+
+}
