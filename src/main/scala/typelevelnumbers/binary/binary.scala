@@ -1,5 +1,7 @@
 package typelevelnumbers.binary
 
+import typelevelnumbers.ternary.Trit
+
 import scala.annotation.tailrec
 
 /**
@@ -60,6 +62,27 @@ object Bits:
         val remainder: 0 | 1 = n.mod(2).asInstanceOf[0 | 1]
         fromBigInt(quotient, Bits.Some(Bit.fromInt(remainder), acc))
     fromBigInt(n, Bits.None).reversed
+
+  type Compared[B1 <: Bits, B2 <: Bits] <: Trit = (B1, B2) match
+    case (None, _) => IsZero[B2] match
+      case false => Trit.N
+      case true => Trit.Z
+    case (_, None) => IsZero[B1] match
+      case false => Trit.P
+      case true => Trit.Z
+    case (Some[f1, r1], Some[f2, r2]) => Compared[r1, r2] match
+      case Trit.Z => (f1, f2) match
+        case (Bit.O, Bit.O) => Trit.Z
+        case (Bit.O, Bit.I) => Trit.N
+        case (Bit.I, Bit.O) => Trit.P
+        case (Bit.I, Bit.I) => Trit.Z
+      case Trit.N => Trit.N
+      case Trit.P => Trit.P
+
+  type IsZero[B <: Bits] <: Boolean = B match
+    case None => true
+    case Some[Bit.O, r] => IsZero[r]
+    case Some[Bit.I, r] => false
 
   type Product[B1 <: Bits, B2 <: Bits] <: Bits = (B1, B2) match
     case (None, _) => None

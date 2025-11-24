@@ -12,7 +12,7 @@ import scala.compiletime.ops.int.+
  */
 sealed trait Trit derives CanEqual:
   @targetName("negated") def unary_- : Trit.Negated[this.type]
-  def toInt: Int
+  def toInt: Trit.ToInt[this.type ]
 object Trit:
   type Z = Z.type
   case object Z extends Trit:
@@ -36,7 +36,7 @@ object Trit:
     case _: N => P
     case _: P => N
 
-  type Sum3[T1 <: Trit, T2 <: Trit, T3 <: Trit] <: (Trit, Trit) = AsInt[T1] + AsInt[T2] + AsInt[T3] match
+  type Sum3[T1 <: Trit, T2 <: Trit, T3 <: Trit] <: (Trit, Trit) = ToInt[T1] + ToInt[T2] + ToInt[T3] match
     case -3 => (N, Z)
     case -2 => (N, P)
     case -1 => (Z, N)
@@ -45,29 +45,24 @@ object Trit:
     case 2 => (P, N)
     case 3 => (P, Z)
 
-  type Sum[T1 <: Trit, T2 <: Trit] <: (Trit, Trit) = AsInt[T1] + AsInt[T2] match
+  type Sum[T1 <: Trit, T2 <: Trit] <: (Trit, Trit) = ToInt[T1] + ToInt[T2] match
     case -2 => (N, P)
     case -1 => (Z, N)
     case 0 => (Z, Z)
     case 1 => (Z, P)
     case 2 => (P, N)
 
-  inline def sum[T1 <: Trit, T2 <: Trit](t1: T1, t2: T2): Sum[T1, T2] = constValue[AsInt[T1] + AsInt[T2]] match
+  inline def sum[T1 <: Trit, T2 <: Trit](t1: T1, t2: T2): Sum[T1, T2] = constValue[ToInt[T1] + ToInt[T2]] match
     case _: -2 => (N, P)
     case _: -1 => (Z, N)
     case _: 0 => (Z, Z)
     case _: 1 => (Z, P)
     case _: 2 => (P, N)
 
-  type AsInt[T <: Trit] <: Int = T match
+  type ToInt[T <: Trit] <: Int = T match
     case Z => 0
     case N => -1
     case P => 1
-
-  def asInt[T <: Trit](t: T): AsInt[T] = t match
-    case _: Z => 0
-    case _: N => -1
-    case _: P => 1
 
   def sign(n: BigInt): Trit =
     if n < 0 then N else
