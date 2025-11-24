@@ -1,6 +1,7 @@
 package typelevelnumbers
 
 import scala.annotation.tailrec
+import scala.compiletime.ops.any.==
 
 /**
  * Sequence of [[Trit]]s
@@ -28,7 +29,7 @@ sealed trait Trits derives CanEqual:
 object Trits:
   /**
    * Sequence of [[Trit]]s that starts with [[SignBit]],
-   * and can therefore be used as a canonical representation of an integer
+   * and can therefore be used as a canonical representation of an integer in balanced ternary
    */
   sealed trait OfNumber extends Trits
   object OfNumber:
@@ -79,6 +80,37 @@ object Trits:
         case WithSignBit(first, rest) =>
           WithSignBit(SignBit.negated(first), Trits.negated(rest))
   end WithSignBit
+
+  // https://chatgpt.com/c/6807e6d5-a6cc-800f-be1c-1904be05fed3
+
+  type SumC[R1 <: Trits, R2 <: Trits, C <: Trit] <: Trits = C match
+    case Trit.Z => Sum[R1, R2]
+    case _ => (Split[R1], Split[R2]) match
+      case ((first1, rest1), (first2, rest2)) => Trit.Sum3[first1, first2, C] match
+        case (carry, trit) => NonEmpty[trit, SumC[rest1, rest2, carry]]
+
+  type Split[T <: Trits] <: (Trit, Trits) = T match
+    case Empty => (Trit.Z, Empty)
+    case NonEmpty[first, rest] => (first, rest)
+
+  type Sum[R1 <: Trits, R2 <: Trits] <: Trits = (R1, R2) match
+    case (Empty, _) => R2
+    case (_, Empty) => R1
+    case (NonEmpty[f1, r1], NonEmpty[f2, r2]) => Trit.Sum[f1, f2] match
+        case (carry, trit) => NonEmpty[trit, SumC[r1, r2, carry]]
+
+  type SumO[R1 <: Trits, R2 <: Trits] <: Trits = R1 match
+    case (Empty, _) => R2
+    case (_, Empty) => R1
+    case (NonEmpty[f1, r1], NonEmpty[f2, r2]) => Trit.Sum[f1, f2] match
+        case (carry, trit) => NonEmpty[trit, SumO[r1, carry match
+          case Trit.Z => r2
+          case carry => SumO[WithSignBit[carry, Empty], r2]
+        ]]
+
+  type Reversed[T <: Trits, Acc <: Trits] <: Trits = T match
+    case Empty => Acc
+    case NonEmpty[first, rest] => Reversed[rest, NonEmpty[first, Acc]]
 
   type Negated[T <: Trits] <: Trits = T match
     case Empty => Empty
