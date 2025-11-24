@@ -1,7 +1,8 @@
-package typelevelnumbers
+package typelevelnumbers.ternary
+
+import typelevelnumbers.ternary.{SignBit, Trit}
 
 import scala.annotation.tailrec
-import scala.compiletime.ops.any.==
 
 /**
  * Sequence of [[Trit]]s

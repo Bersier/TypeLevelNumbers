@@ -1,7 +1,7 @@
 
 name := "TypeLevelNumbers"
 
-scalaVersion := "3.7.0-RC3"
+scalaVersion := "3.7.4"
 
 scalacOptions ++= Seq(
 //  "-Vprofile",
@@ -9,13 +9,12 @@ scalacOptions ++= Seq(
   "-Wimplausible-patterns",
   "-Wnonunit-statement",
   "-Wsafe-init",
-  "-Wunused:all",
+//  "-Wunused:all",
   "-Xcook-docs",
-  "-Xdebug-macros",
 //  "-Xdisable-assertions",
   "-Xkind-projector:underscores",
 //  "-Xmax-inlines", "128",
-  "-Ycheck-all-patmat",
+//  "-Ycheck-all-patmat",
 //  "-Ycheck-reentrant",
   "-Ydebug-pos",
   "-Yexplicit-nulls",

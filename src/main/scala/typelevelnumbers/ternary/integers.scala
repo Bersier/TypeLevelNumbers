@@ -1,4 +1,4 @@
-package typelevelnumbers
+package typelevelnumbers.ternary
 
 import scala.annotation.targetName
 
