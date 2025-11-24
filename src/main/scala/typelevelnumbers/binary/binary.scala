@@ -3,6 +3,8 @@ package typelevelnumbers.binary
 import typelevelnumbers.ternary.Trit
 
 import scala.annotation.tailrec
+import scala.compiletime.constValue
+import scala.compiletime.ops.int./
 
 /**
  * Sequence of [[Bit]]s
@@ -48,20 +50,30 @@ object Bits:
         case _ => Some(first, trimmedR)
 
   @tailrec private def reversed(bits: Bits, acc: Bits): Bits = bits match
-    case Bits.None => acc
-    case Bits.Some(first, rest) => reversed(rest, Bits.Some(first, acc))
+    case None => acc
+    case Some(first, rest) => reversed(rest, Some(first, acc))
 
   /**
    * The non-negative number is converted to its little-endian binary encoding.
    */
-  def fromBigInt(n: BigInt): Bits = if n == 0 then Bits.None else
+  def fromBigInt(n: BigInt): Bits = if n == 0 then None else
     assert(n > 0)
     @tailrec def fromBigInt(n: BigInt, acc: Bits): Bits =
       if n == 0 then acc else
         val quotient = n / 2
-        val remainder: 0 | 1 = n.mod(2).asInstanceOf[0 | 1]
-        fromBigInt(quotient, Bits.Some(Bit.fromInt(remainder), acc))
-    fromBigInt(n, Bits.None).reversed
+        val remainder = n.mod(2).toInt match
+          case 0 => Bit.O
+          case _ => Bit.I
+        fromBigInt(quotient, Some(remainder, acc))
+    fromBigInt(n, None).reversed
+
+  type FromInt[N <: Int] <: Bits = N match
+    case 0 => None
+    case _ => Some[Bit.FromInt[N], FromInt[N / 2]]
+
+  inline def fromInt[N <: Int](n: N): FromInt[N] = n match
+    case _: 0 => None
+    case _ => Some(Bit.fromInt(n), fromInt(constValue[N / 2]))
 
   type Compared[B1 <: Bits, B2 <: Bits] <: Trit = (B1, B2) match
     case (None, _) => IsZero[B2] match

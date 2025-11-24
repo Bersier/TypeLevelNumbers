@@ -1,6 +1,7 @@
 package typelevelnumbers.binary
 
-import scala.compiletime.ops.int.+
+import scala.compiletime.constValue
+import scala.compiletime.ops.int.{%, +}
 
 sealed trait Bit derives CanEqual:
   def toInt: Bit.ToInt[this.type]
@@ -25,11 +26,11 @@ object Bit:
     case O => 0
     case I => 1
 
-  type FromInt[N <: 0 | 1] <: Bit = N match
+  type FromInt[N <: Int] <: Bit = N % 2 match
     case 0 => O
-    case 1 => I
+    case _ => I
 
-  def fromInt[N <: 0 | 1](n: N): FromInt[N] = n match
+  inline def fromInt[N <: Int](n: N): FromInt[N] = constValue[N % 2] match
     case _: 0 => O
-    case _: 1 => I
+    case _ => I
 end Bit
